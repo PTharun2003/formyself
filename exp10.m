@@ -1,206 +1,106 @@
-% Parameters for the simulation
-N = 1000; 
-% Number ofwaves (adjust as needed)
-E0 = 1; 
-% Amplitudeof local average E-field (adjust asneeded)
-fc = 2e9; 
-% Carrier frequency in Hz (adjust as needed)
-% Generate random amplitudes for Cn(Equation 4.58)
+N = 1000;
+E0 = 1;
+fc = 2e9;
 Cn = rand(1, N);
-% Normalize amplitudes (Equation4.62)
 Cn = Cn / sum(Cn);
-% Initialize time parameters
-t = linspace(0, 1, 1000); % Timevector (adjust as needed)
-% Initialize arrays to store Tc(t)and Ts(t)
-% Probability density function of
-abs(z)
+t = linspace(0, 1, 1000);
+Tc = zeros(size(t));
+Ts = zeros(size(t));
+for n = 1:N
+phase_n = rand * 2 * pi;
+Tc = Tc + E0 * Cn(n) * cos(2 * pi * fc * t + phase_n);
+Ts = Ts + E0 * Cn(n) * sin(2 * pi * fc * t + phase_n);
+end
+Ez_field = Tc .* cos(2 * pi * fc * t) - Ts .* sin(2 * pi * fc * t);
+v = 30;
+angle_of_arrival_deg = 30;
+angle_of_arrival_rad = deg2rad(angle_of_arrival_deg);
+c = 3e8;
+doppler_shift = (v / c) * fc * cos(angle_of_arrival_rad);
+N = 10^6;
+x = randn(1, N);
+y = randn(1, N);
+z = (x + 1i * y);
 zBin = [0:0.01:7];
 sigma2 = 1;
-pzTheory = (zBin / sigma2) .* exp(-
-(zBin.^2) / (2 * sigma2)); % Theory
-[nzSim, zBinSim] = hist(abs(z),
-zBin); % Simulation
-% Probability density of theta
+pzTheory = (zBin / sigma2) .* exp(-(zBin.^2) / (2 * sigma2));
+[nzSim, zBinSim] = hist(abs(z),zBin);
 thetaBin = [-pi:0.01:pi];
-pThetaTheory = 1 / (2 * pi) *
-ones(size(thetaBin));
-[nThetaSim, thetaBinSim] =
-hist(angle(z), thetaBin); %
-Simulation
-% Plot the PDFs
+pThetaTheory = 1 / (2 * pi) * ones(size(thetaBin));
+[nThetaSim, thetaBinSim] = hist(angle(z), thetaBin);
 figure;
 subplot(2, 1, 1);
-plot(zBinSim, nzSim / (N * 0.01),
-'m', 'LineWidth', 2);
+plot(zBinSim, nzSim / (N * 0.01), 'm', 'LineWidth', 2);
 hold on;
 plot(zBin, pzTheory, 'b.-');
 xlabel('z');
 ylabel('Probability Density, p(z)');
 legend('Simulation', 'Theory');
-title('Probability Density Function
-of |z|');
+title('Probability Density Function of |z|');
 axis([0 7 0 0.7]);
 grid on;
 subplot(2, 1, 2);
-plot(thetaBinSim, nThetaSim / (N *
-0.01), 'm', 'LineWidth', 2);
+plot(thetaBinSim, nThetaSim / (N *0.01), 'm', 'LineWidth', 2);
 hold on;
 plot(thetaBin, pThetaTheory, 'b.-');
-xlabel('?');
-ylabel('Probability Density, p(?)');
+xlabel('θ');
+ylabel('Probability Density, p(θ)');
 legend('Simulation', 'Theory');
-title('Probability Density Function
-of ?');
+title('Probability Density Function of θ');
 axis([-pi pi 0 0.2]);
 grid on;
-Tc = zeros(size(t));
-Ts = zeros(size(t));
-% Calculate Tc(t) and Ts(t) over time(Equations 4.64 and 4.65)
-for n = 1:N
- % Random phase for the nthcomponent (Equation 4.61)
- phase_n = rand * 2 * pi;
- % Calculate Tc(t) and Ts(t)components
- Tc = Tc + E0 * Cn(n) * cos(2 * pi* fc * t + phase_n);
- Ts = Ts + E0 * Cn(n) * sin(2 * pi* fc * t + phase_n);
-end
-% Calculate E_z field component(Equation 4.63)
-Ez_field = Tc .* cos(2 * pi * fc * t)- Ts .* sin(2 * pi * fc * t);
-% Calculate the Doppler shift
-v = 30; 
-% Velocity of the mobilereceiver in m/s (adjust as needed)
-angle_of_arrival_deg = 30; 
-% Angle ofarrival in degrees (adjust as needed)
-% Convert angle of arrival fromdegrees to radians
-angle_of_arrival_rad =deg2rad(angle_of_arrival_deg);
-% Calculate the Doppler shift in Hertz
-% Apply the filter to the received
-signal (Ez_field)
-Fc = 0; % Center frequency (adjust as
-needed)
-Fm = doppler_shift; % Maximum Doppler
-shift (adjust as needed)
-% Define the frequency axis
-fs = 1 / (t(2) - t(1)); % Sampling
-frequency
-f_axis = linspace(-fs / 2, fs / 2,
-length(t));
-% Calculate the filter response
-frequency_response = (1.5 / (pi *
-Fm)) * sqrt(1 - ((f_axis - Fc) /
-Fm).^2);
-% Apply the filter to the received
-signal (Ez_field)
-filtered_signal = ifft(fft(Ez_field)
-.* fftshift(frequency_response));
-% Plot the magnitude of Ez_field as
-the received signal (r)
+Fc = 0;
+Fm = doppler_shift;
+fs = 1 / (t(2) - t(1));
+f_axis = linspace(-fs / 2, fs / 2, length(t));
+frequency_response = (1.5 / (pi * Fm)) * sqrt(1 - ((f_axis - Fc) / Fm).^2);
+filtered_signal = ifft(fft(Ez_field).* fftshift(frequency_response));
 figure;
 plot(t, abs(filtered_signal));
 xlabel('Time (s)');
-ylabel('Received Signal Amplitude
-(r)');
-title('Received Signal (Magnitude of
-Ez\_field)');
-% Plot the Doppler shift as before
+ylabel('Received Signal Amplitude(r)');
+title('Received Signal (Magnitude of Ez\_field)');
 figure;
-plot(t, doppler_shift *
-ones(size(t)), 'r--');
+plot(t, doppler_shift * ones(size(t)), 'r--');
 xlabel('Time (s)');
 ylabel('Doppler Shift (Hz)');
 title('Doppler Shift Over Time');
-% Plot the power spectrum of the
-filtered signal
-psd_filtered = (1 / (fs *
-length(filtered_signal))) *
-abs(fft(filtered_signal)).^2;
-f_axis_filtered = linspace(-fs / 2,
-fs / 2, length(psd_filtered));
+psd_filtered = (1 / (fs * length(filtered_signal))) * abs(fft(filtered_signal)).^2;
+f_axis_filtered = linspace(-fs / 2, fs / 2, length(psd_filtered));
 figure;
 plot(f_axis_filtered, psd_filtered);
-% Power spectrum
 xlabel('Frequency (Hz)');
 ylabel('Power/Frequency (dB/Hz)');
-title('Power Spectrum of Filtered
-Received Signal');% Parameters for
-the simulation
-N = 1000; % Number of
-waves (adjust as needed)
-E0 = 1; % Amplitude
-of local average E-field (adjust as
-needed)
-fc = 2e9; % Carrier
-frequency in Hz (adjust as needed)
-fs = 1000; % Sampling
-frequency in Hz (adjust as needed)
-% Initialize time parameters
-t = linspace(0, 1, fs); % Time
-vector (adjust as needed)
-% Number of waveforms
+title('Power Spectrum of Filtered Received Signal');
+N = 1000;
+E0 = 1;
+fc = 2e9;
+fs = 1000;
+t = linspace(0, 1, fs);
 num_waveforms = 3;
-% Initialize cross-correlation matrix
-cross_corr_matrix =
-zeros(num_waveforms, num_waveforms);
-% Generate three r(t) waveforms
-rt_waveforms = cell(num_waveforms,
-1);
+cross_corr_matrix = zeros(num_waveforms, num_waveforms);
+rt_waveforms = cell(num_waveforms, 1);
 for waveform_idx = 1:num_waveforms
- % Initialize arrays to store
-Tc(t) and Ts(t)
- Tc = zeros(size(t));
- Ts = zeros(size(t));
- % Calculate Tc(t) and Ts(t) over
-time (Equations 4.64 and 4.65)
- for n = 1:N
- % Random phase for the nth
-component (Equation 4.61)
- phase_n = rand * 2 * pi;
- % Calculate Tc(t) and Ts(t)
-components
- Tc = Tc + E0 * rand * cos(2 *
-pi * fc * t + phase_n);
- Ts = Ts + E0 * rand * sin(2 *
-pi * fc * t + phase_n);
- end
- % Calculate E_z field component
-(Equation 4.63)
- Ez_field = Tc .* cos(2 * pi * fc
-* t) - Ts .* sin(2 * pi * fc * t);
- 
- % Apply the filter to the
-received signal (Ez_field)
- Fc = 0; % Center frequency
-(adjust as needed)
- Fm = doppler_shift; % Maximum
-Doppler shift (adjust as needed)
- % Define the frequency axis
- f_axis = linspace(-fs / 2, fs /
-2, length(t));
-% Calculate the filter response
- frequency_response = (1.5 / (pi *
-Fm)) * sqrt(1 - ((f_axis - Fc) /
-Fm).^2);
- % Apply the filter to the
-received signal (Ez_field)
- filtered_signal =
-ifft(fft(Ez_field) .*
-fftshift(frequency_response));
- % Store the generated r(t)
-waveform
- rt_waveforms{waveform_idx} =
-abs(filtered_signal);
+Tc = zeros(size(t));
+Ts = zeros(size(t));
+for n = 1:N
+phase_n = rand * 2 * pi;
+Tc = Tc + E0 * rand * cos(2 * pi * fc * t + phase_n);
+Ts = Ts + E0 * rand * sin(2 * pi * fc * t + phase_n);
 end
-% Calculate cross-correlation values
-among r(t) waveforms
+Ez_field = Tc .* cos(2 * pi * fc * t) - Ts .* sin(2 * pi * fc * t);
+Fc = 0;
+Fm = doppler_shift;
+f_axis = linspace(-fs / 2, fs / 2, length(t));
+frequency_response = (1.5 / (pi * Fm)) * sqrt(1 - ((f_axis - Fc) / Fm).^2);
+filtered_signal = ifft(fft(Ez_field) .* fftshift(frequency_response));
+rt_waveforms{waveform_idx} = abs(filtered_signal);
+end
 for i = 1:num_waveforms
- for j = 1:num_waveforms
- cross_corr =
-xcorr(rt_waveforms{i},
-rt_waveforms{j});
- cross_corr_matrix(i, j) =
-max(cross_corr);
- end
+for j = 1:num_waveforms
+cross_corr = xcorr(rt_waveforms{i}, rt_waveforms{j});
+cross_corr_matrix(i, j) = max(cross_corr);
 end
-% Display the cross-correlation
-matrix
+end
 disp('Cross-Correlation Matrix:');
-disp(cross_corr_matrix);
+disp(cross_corr_matrix)
